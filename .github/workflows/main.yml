@@ -1,0 +1,28 @@
+on: [push, pull_request]
+name: CI
+jobs:
+  build:
+    name: "Build on Racket '${{ matrix.racket-version }}' (${{ matrix.racket-variant }})"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        racket-version: ["stable", "current"]
+        racket-variant: ["BC", "CS"]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: Bogdanp/setup-racket@v0.12
+        with:
+          architecture: x64
+          distribution: full
+          variant: ${{ matrix.racket-variant }}
+          version: ${{ matrix.racket-version }}
+      - name: Installing metric-lib and its dependencies
+        run: raco pkg install --no-docs --auto --link metric-lib
+      - name: Installing metric and its dependencies
+        run: raco pkg install --no-docs --auto --link metric
+      - name: Compiling metric-lib and building its docs
+        run: raco setup --check-pkg-deps --unused-pkg-deps metric-lib
+      - name: Compiling metric and building its docs
+        run: raco setup --check-pkg-deps --unused-pkg-deps metric
+      - name: Testing metric
+        run: raco test -x -p metric
