@@ -23,4 +23,4 @@ jobs:
       - name: Compiling packages and docs
         run: raco setup --check-pkg-deps --unused-pkg-deps --pkgs metric-lib metric
       - name: Testing metric
-        run: raco test -x -p metric
+        run: raco test -x -p metric-lib metric
