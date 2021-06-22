@@ -1,3 +1,6 @@
 #lang racket/base
 
-(require metric/private/metric-value)
+(require metric/private/metric
+         metric/private/syntax)
+
+
