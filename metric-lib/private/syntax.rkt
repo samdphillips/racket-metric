@@ -16,17 +16,18 @@
      (symbol->string
       (syntax->datum id)))))
 
-;; XXX: separate names for identifier and in the metric
 (define-syntax-parse-rule
   (define-counter name:id
+    {~optional {~seq #:name name-string:str}
+               #:defaults ([name-string
+                            (datum->syntax
+                              #'name (symbol->string
+                                       (syntax->datum #'name)) #'name)])}
     {~optional {~seq #:collector collector-expr}
                #:defaults
                ([collector-expr #'(current-collector)])}
     description:str
     tag-names:id ...)
-
-  #:with name-string
-  (datum->syntax #'name (symbol->string (syntax->datum #'name)) #'name)
 
   #:with (tag-kws ...)
   (for/list ([t (in-syntax #'(tag-names ...))]) (id->kw t))
@@ -38,17 +39,18 @@
   #:with incr-name!
   (format-id #'name "~a-incr!" #'name #:source #'name)
 
+  #:with ___ #'(... ...)
+
   (begin
     (define name
       (make-metric name-string 'counter description '(tag-strs ...)))
 
     (collector-register-metric! collector-expr name)
 
-    ;; XXX: inlining this or at least checking keywords at expand time could be
-    ;; good
-    (define (incr-proc! [amt 1] (~@ tag-kws tag-names) ...)
-      (metric-incr! name (list tag-names ...) amt))
-    (define-syntax-rule (incr-name! x (... ...)) (incr-proc! x (... ...)))))
+    (define-syntax-parse-rule
+      (incr-name! {~alt {~optional n:integer #:defaults ([n #'1])}
+                {~once {~seq tag-kws {~var tag-names str}}} ...} ___)
+      (metric-incr! name '(tag-names ...) n))))
 
 (module+ test
   (require rackunit)
